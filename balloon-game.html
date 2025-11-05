@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Balloon Math Burst — Expression Edition</title>
+  <style>
+    *{margin:0;padding:0;box-sizing:border-box;}
+    body{
+      font-family:'Segoe UI',sans-serif;
+      background:linear-gradient(135deg,#667eea,#764ba2);
+      height:100vh;
+      display:flex;
+      justify-content:center;
+      align-items:center;
+    }
+    .container{
+      background:#fff;
+      border-radius:25px;
+      box-shadow:0 10px 40px rgba(0,0,0,0.3);
+      width:95%;
+      max-width:1000px;
+      min-height:650px;
+      padding:20px;
+      position:relative;
+    }
+    h1{text-align:center;color:#667eea;margin-bottom:15px;}
+    .stats{
+      display:flex;
+      justify-content:space-around;
+      margin-bottom:15px;
+      font-weight:bold;
+      font-size:1.2rem;
+    }
+    .game-area{
+      position:relative;
+      height:450px;
+      background:linear-gradient(180deg,#e3f2fd,#90caf9);
+      border:3px solid #667eea;
+      border-radius:20px;
+      overflow:hidden;
+    }
+    .next-target{
+      position:absolute;
+      top:10px;
+      left:50%;
+      transform:translateX(-50%);
+      background:white;
+      padding:10px 20px;
+      border-radius:15px;
+      border:2px solid #667eea;
+      font-weight:bold;
+      color:#667eea;
+      z-index:10;
+    }
+    .balloon{
+      position:absolute;
+      width:110px;
+      height:140px;
+      cursor:pointer;
+      animation:float 4s ease-in-out infinite;
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+    }
+    .balloon-body{
+      width:100%;
+      height:80%;
+      border-radius:50%;
+      display:flex;
+      justify-content:center;
+      align-items:center;
+      font-size:1.4rem;
+      font-weight:bold;
+      color:white;
+      text-shadow:1px 1px 4px rgba(0,0,0,0.4);
+    }
+    .balloon-string{
+      width:2px;
+      height:20%;
+      background:linear-gradient(to bottom,rgba(0,0,0,0.4),transparent);
+    }
+    .balloon-color-0 .balloon-body{background:linear-gradient(135deg,#ff6b6b,#ee5253);}
+    .balloon-color-1 .balloon-body{background:linear-gradient(135deg,#48dbfb,#0abde3);}
+    .balloon-color-2 .balloon-body{background:linear-gradient(135deg,#1dd1a1,#10ac84);}
+    .balloon-color-3 .balloon-body{background:linear-gradient(135deg,#feca57,#ff9f43);}
+    .balloon-color-4 .balloon-body{background:linear-gradient(135deg,#5f27cd,#341f97);}
+    @keyframes float{
+      0%,100%{transform:translateY(0) rotate(-2deg);}
+      33%{transform:translateY(-15px) rotate(2deg);}
+      66%{transform:translateY(-8px) rotate(-1deg);}
+    }
+    .bursting{animation:burst .5s forwards;}
+    @keyframes burst{
+      0%{transform:scale(1);opacity:1;}
+      50%{transform:scale(1.4);opacity:.7;}
+      100%{transform:scale(2);opacity:0;}
+    }
+    .feedback{
+      position:absolute;
+      top:50%;
+      left:50%;
+      transform:translate(-50%,-50%);
+      font-size:2.5rem;
+      font-weight:bold;
+      padding:15px 30px;
+      border-radius:15px;
+      color:white;
+      opacity:0;
+      pointer-events:none;
+      transition:opacity .3s;
+      z-index:20;
+    }
+    .feedback.show{opacity:1;}
+    .feedback.correct{background:linear-gradient(135deg,#28a745,#20c997);}
+    .feedback.wrong{background:linear-gradient(135deg,#dc3545,#c82333);}
+    .result{
+      position:absolute;
+      inset:0;
+      background:rgba(255,255,255,0.95);
+      border-radius:20px;
+      display:none;
+      flex-direction:column;
+      justify-content:center;
+      align-items:center;
+      text-align:center;
+      z-index:100;
+    }
+    .result.show{display:flex;}
+    button{
+      background:linear-gradient(135deg,#667eea,#764ba2);
+      color:white;
+      border:none;
+      border-radius:12px;
+      padding:12px 25px;
+      font-weight:bold;
+      cursor:pointer;
+      font-size:1rem;
+    }
+    button:hover{background:linear-gradient(135deg,#5568d3,#653a8b);}
+    .footer{
+      text-align:center;
+      margin-top:15px;
+      padding-top:15px;
+      border-top:2px solid #e0e0e0;
+      color:#666;
+      font-size:0.9rem;
+    }
+    .footer a{
+      color:#667eea;
+      text-decoration:none;
+      font-weight:bold;
+    }
+    .footer a:hover{
+      color:#764ba2;
+      text-decoration:underline;
+    }
+    .watermark{
+      font-size:0.85rem;
+      opacity:0.8;
+      margin-top:5px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🎈 Balloon Math Burst — Expression Edition</h1>
+    <div class="stats">
+      <div>Score: <span id="score">0</span></div>
+      <div>Level: <span id="level">1</span></div>
+      <div>Time: <span id="timer">10</span>s</div>
+      <div>Accuracy: <span id="accuracy">100%</span></div>
+    </div>
+    <div class="game-area" id="gameArea">
+      <div class="next-target" id="nextTarget">Click: ?</div>
+    </div>
+    <div class="feedback" id="feedback"></div>
+    <div class="result" id="result">
+      <h2>🎉 Game Over!</h2>
+      <p>Final Score: <strong id="finalScore">0</strong></p>
+      <p>Levels Completed: <strong id="finalLevel">0</strong></p>
+      <p>Accuracy: <strong id="finalAccuracy">0%</strong></p>
+      <p>High Score: <strong id="highScore">0</strong></p>
+      <button id="restart2">🔄 Play Again</button>
+    </div>
+    <div style="text-align:center;margin-top:20px;">
+      <button id="restart">🔄 Restart Game</button>
+    </div>
+    <div class="footer">
+      <div>🎈 <strong>Balloon Math Burst</strong> — Challenge Your Mind!</div>
+      <div class="watermark">Developed with ❤️ by <a href="#" target="_blank">Your Name</a> | © 2025 All Rights Reserved</div>
+    </div>
+  </div>
+
+  <script>
+    let score=0,level=1,timeLeft=10,timer=null;
+    let expressions=[],sorted=[],index=0,totalClicks=0,correctClicks=0;
+    let gameActive=false;
+
+    const feedback=document.getElementById("feedback");
+    const result=document.getElementById("result");
+
+    function randomExpression(level){
+      const ops=['+','-','*','/'];
+      const op=ops[Math.floor(Math.random()*ops.length)];
+      // Progressive difficulty with closer values for harder gameplay
+      let range, a, b;
+      if(level <= 5){
+        // Easy: small numbers
+        range = 20;
+        a = Math.floor(Math.random()*range)+5;
+        b = Math.floor(Math.random()*range)+3;
+      } else if(level <= 10){
+        // Medium: moderate numbers
+        range = 30;
+        a = Math.floor(Math.random()*range)+10;
+        b = Math.floor(Math.random()*range)+5;
+      } else if(level <= 15){
+        // Medium-Hard: larger numbers with closer results
+        range = 50;
+        a = Math.floor(Math.random()*range)+20;
+        b = Math.floor(Math.random()*range)+10;
+      } else if(level <= 20){
+        // Hard: big numbers, close values
+        range = 70;
+        a = Math.floor(Math.random()*range)+30;
+        b = Math.floor(Math.random()*range)+15;
+      } else {
+        // Very Hard: large numbers that produce similar results
+        range = 100;
+        a = Math.floor(Math.random()*range)+40;
+        b = Math.floor(Math.random()*range)+20;
+      }
+      
+      if(op==='/'){
+        // For division, ensure clean results but challenging
+        b=Math.max(2,Math.floor(Math.random()*12)+2);
+        const quotient = Math.floor(Math.random()*(level > 10 ? 20 : 15))+1;
+        a = b * quotient;
+      }
+      
+      const exp=`${a} ${op} ${b}`;
+      const value=Math.round(eval(exp)*100)/100;
+      return {exp,value};
+    }
+
+    function generateExpressions(){
+      const arr=[];
+      const attempts = 100; // Try multiple times to get closer values
+      let bestSet = [];
+      let smallestSpread = Infinity;
+      
+      // Try to generate sets with values close together for difficulty
+      for(let attempt = 0; attempt < (level > 10 ? 50 : 20); attempt++){
+        const tempArr = [];
+        while(tempArr.length < 3){
+          const e = randomExpression(level);
+          if(!tempArr.some(x => x.exp === e.exp || Math.abs(x.value - e.value) < 1)) {
+            tempArr.push(e);
+          }
+        }
+        
+        // Calculate spread (difference between max and min)
+        const values = tempArr.map(e => e.value).sort((a,b) => a - b);
+        const spread = values[2] - values[0];
+        
+        // For harder levels, prefer closer values
+        if(level > 10 && spread < smallestSpread && spread > 5){
+          smallestSpread = spread;
+          bestSet = tempArr;
+        } else if(level <= 10){
+          bestSet = tempArr;
+          break;
+        }
+      }
+      
+      return bestSet.length === 3 ? bestSet : arr.length === 3 ? arr : generateExpressions();
+    }
+
+    function updateStats(){
+      document.getElementById("score").textContent=score;
+      document.getElementById("level").textContent=level;
+      document.getElementById("timer").textContent=timeLeft;
+      const acc=totalClicks?Math.round(correctClicks/totalClicks*100):100;
+      document.getElementById("accuracy").textContent=acc+"%";
+    }
+
+    function startTimer(){
+      timeLeft=10;updateStats();
+      clearInterval(timer);
+      timer=setInterval(()=>{
+        timeLeft--;
+        updateStats();
+        if(timeLeft<=0){
+          clearInterval(timer);
+          gameActive=false;
+          showFeedback(false);
+          setTimeout(showResult,1000);
+        }
+      },1000);
+    }
+
+    function createBalloon(expr,indexColor){
+      const b=document.createElement("div");
+      b.className=`balloon balloon-color-${indexColor}`;
+      b.innerHTML=`<div class="balloon-body">${expr.exp}</div><div class="balloon-string"></div>`;
+      // Better spacing to avoid overlap - divide into 3 sections
+      const xPos = 8 + (indexColor * 30) + (Math.random() * 6);
+      const yPos = 35 + (Math.random() * 35);
+      b.style.left=`${xPos}%`;
+      b.style.top=`${yPos}%`;
+      b.addEventListener("click",()=>handleClick(b,expr.value));
+      return b;
+    }
+
+    function handleClick(balloon,val){
+      if(!gameActive)return;
+      totalClicks++;
+      const expected=sorted[index].value;
+      if(val===expected){
+        correctClicks++;
+        balloon.classList.add("bursting");
+        setTimeout(()=>balloon.remove(),400);
+        index++;
+        showFeedback(true);
+        if(index>=sorted.length){
+          nextRound();
+        }else updateNextTarget();
+      }else{
+        // Only show wrong feedback for levels 1-10
+        if(level <= 10){
+          showFeedback(false);
+        }
+        // After level 10, no feedback on wrong clicks - silent penalty
+      }
+      updateStats();
+    }
+
+    function updateNextTarget(){
+      const nt=document.getElementById("nextTarget");
+      if(index===0){
+        nt.textContent="Click: Smallest Value";
+      } else if(index===1){
+        nt.textContent="Click: Middle Value";
+      } else if(index===2){
+        nt.textContent="Click: Largest Value";
+      } else {
+        nt.textContent="✅ Round Complete!";
+      }
+    }
+
+    function showFeedback(correct){
+      feedback.textContent=correct?"🎉 Correct!":"❌ Wrong!";
+      feedback.className=`feedback ${correct?"correct":"wrong"} show`;
+      setTimeout(()=>feedback.classList.remove("show"),700);
+    }
+
+    function startRound(){
+      document.querySelectorAll(".balloon").forEach(b=>b.remove());
+      expressions=generateExpressions();
+      sorted=[...expressions].sort((a,b)=>a.value-b.value);
+      const shuffled=[...expressions].sort(()=>Math.random()-0.5);
+      const area=document.getElementById("gameArea");
+      shuffled.forEach((e,i)=>area.appendChild(createBalloon(e,i)));
+      index=0;
+      updateNextTarget();
+      gameActive=true;
+      startTimer();
+      updateStats();
+    }
+
+    function nextRound(){
+      clearInterval(timer);
+      score+=100+timeLeft*2;
+      if(level<30){
+        level++;
+        setTimeout(()=>startRound(),1000);
+      }else showResult();
+    }
+
+    function showResult(){
+      clearInterval(timer);
+      gameActive=false;
+      document.getElementById("finalScore").textContent=score;
+      document.getElementById("finalLevel").textContent=level-1;
+      const acc=totalClicks?Math.round(correctClicks/totalClicks*100):0;
+      document.getElementById("finalAccuracy").textContent=acc+"%";
+      const high=localStorage.getItem("mathHigh")||0;
+      if(score>high){
+        localStorage.setItem("mathHigh",score);
+        document.getElementById("highScore").textContent=score+" 🏆";
+      }else document.getElementById("highScore").textContent=high;
+      result.classList.add("show");
+    }
+
+    function restart(){
+      clearInterval(timer);
+      score=0;level=1;totalClicks=0;correctClicks=0;
+      result.classList.remove("show");
+      startRound();
+    }
+
+    document.getElementById("restart").addEventListener("click",restart);
+    document.getElementById("restart2").addEventListener("click",restart);
+
+    startRound();
+  </script>
+</body>
+</html>
